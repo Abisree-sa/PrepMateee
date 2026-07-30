@@ -48,10 +48,19 @@ import {
   logPlacementApply,
   deletePlacementOpportunity,
 } from './modules/placement/placement.controller';
+import {
+  createAnnouncement,
+  getAnnouncementsForStudent,
+  getAnnouncementById,
+  getAnnouncementsForCoordinator,
+  updateAnnouncement,
+  deleteAnnouncement,
+  unpublishAnnouncement,
+} from './modules/announcement/announcement.controller';
 
 const router = Router();
 
-// Multer storage setup for resume and materials upload
+// Multer storage setup for resume, materials, and announcements upload
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -62,6 +71,13 @@ const storage = multer.diskStorage({
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const upload = multer({ storage });
+
+const announcementUpload = upload.fields([
+  { name: 'coverImage', maxCount: 1 },
+  { name: 'images', maxCount: 5 },
+  { name: 'video', maxCount: 1 },
+  { name: 'document', maxCount: 1 },
+]);
 
 // --- AUTH ROUTES ---
 router.post('/auth/register-student', registerStudent);
@@ -74,6 +90,15 @@ router.get('/student/dashboard', requireAuth, requireRoles(['STUDENT']), getStud
 router.post('/student/company-prep', requireAuth, askCompanyPrep);
 router.get('/notifications', requireAuth, getNotifications);
 router.post('/notifications/:id/read', requireAuth, markNotificationRead);
+
+// --- DYNAMIC ANNOUNCEMENTS ROUTES ---
+router.get('/announcements', requireAuth, getAnnouncementsForStudent);
+router.get('/announcements/:id', requireAuth, getAnnouncementById);
+router.get('/coordinator/announcements', requireAuth, requireRoles(['COORDINATOR', 'ADMIN']), getAnnouncementsForCoordinator);
+router.post('/coordinator/announcements', requireAuth, requireRoles(['COORDINATOR', 'ADMIN']), announcementUpload, createAnnouncement);
+router.put('/coordinator/announcements/:id', requireAuth, requireRoles(['COORDINATOR', 'ADMIN']), announcementUpload, updateAnnouncement);
+router.delete('/coordinator/announcements/:id', requireAuth, requireRoles(['COORDINATOR', 'ADMIN']), deleteAnnouncement);
+router.patch('/coordinator/announcements/:id/unpublish', requireAuth, requireRoles(['COORDINATOR', 'ADMIN']), unpublishAnnouncement);
 
 // --- PLACEMENT OPPORTUNITIES ROUTES ---
 router.get('/placement/opportunities', requireAuth, getPlacementOpportunities);

@@ -45,6 +45,28 @@ model User {
   uploadedMaterials     PlacementMaterial[]
 }
 
+model Announcement {
+  id                String   @id @default(uuid())
+  title             String
+  category          String   // PLACEMENT_DRIVE, HACKATHON, GENERAL_NOTICE, SEMINAR, EXAM_ALERT
+  description       String   // Rich text / full markdown
+  summary           String?  // Short preview summary
+  coverImageUrl     String?
+  imageUrls         String?  // JSON string array of additional image URLs
+  videoUrl          String?
+  documentUrl       String?
+  documentName      String?
+  publishDate       String   // Date string or ISO
+  expiryDate        String?
+  priorityLevel     String   @default("NORMAL") // NORMAL, HIGH, URGENT
+  targetDepartments String   @default("[\"ALL\"]") // JSON string array
+  targetBatches     String   @default("[\"ALL\"]") // JSON string array
+  status            String   @default("PUBLISHED") // PUBLISHED, SCHEDULED, DRAFT, UNPUBLISHED
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model PlacementMaterial {
   id           String   @id @default(uuid())
   title        String

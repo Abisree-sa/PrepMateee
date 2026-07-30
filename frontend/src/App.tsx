@@ -18,6 +18,7 @@ import { AnalyticsPage } from './pages/student/AnalyticsPage';
 import { MaterialsPage } from './pages/student/MaterialsPage';
 import { HackathonsPage } from './pages/student/HackathonsPage';
 import { PlacementOpportunitiesPage } from './pages/student/PlacementOpportunitiesPage';
+import { AnnouncementDetailPage } from './pages/student/AnnouncementDetailPage';
 
 import { CoordinatorDashboard } from './pages/coordinator/CoordinatorDashboard';
 import { AssessmentBuilderPage } from './pages/coordinator/AssessmentBuilderPage';
@@ -26,6 +27,7 @@ import { AuditPage } from './pages/coordinator/AuditPage';
 import { LiveMonitoringPage } from './pages/coordinator/LiveMonitoringPage';
 import { HackathonsManagerPage } from './pages/coordinator/HackathonsManagerPage';
 import { PlacementManagerPage } from './pages/coordinator/PlacementManagerPage';
+import { AnnouncementManagerPage } from './pages/coordinator/AnnouncementManagerPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole: 'STUDENT' | 'COORDINATOR' }> = ({
   children,
@@ -80,6 +82,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRole="STUDENT">
                 <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/announcements/:id"
+            element={
+              <ProtectedRoute allowedRole="STUDENT">
+                <AnnouncementDetailPage />
               </ProtectedRoute>
             }
           />
@@ -154,6 +164,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRole="COORDINATOR">
                 <CoordinatorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/announcements"
+            element={
+              <ProtectedRoute allowedRole="COORDINATOR">
+                <AnnouncementManagerPage />
               </ProtectedRoute>
             }
           />

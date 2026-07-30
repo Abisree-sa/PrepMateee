@@ -15,6 +15,7 @@ import {
   MonitorCheck,
   Trophy,
   Briefcase,
+  Megaphone,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -37,6 +38,7 @@ export const Sidebar: React.FC = () => {
 
   const coordinatorLinks = [
     { to: '/coordinator/dashboard', label: 'Coordinator Hub', icon: LayoutDashboard },
+    { to: '/coordinator/announcements', label: 'Announcements Hub', icon: Megaphone },
     { to: '/coordinator/placements', label: 'Publish Placements', icon: Briefcase },
     { to: '/coordinator/live-monitoring', label: 'Live Exam Monitor', icon: MonitorCheck },
     { to: '/coordinator/assessment-builder', label: 'Assessment Builder', icon: PlusSquare },

@@ -13,7 +13,7 @@ export async function getStudentDashboard(req: Request, res: Response) {
 
     const userId = req.user.id;
 
-    const [user, resume, submissions, mockInterviews, materialsCount, activityLogs, hackathons, placementDrives, notifications] = await Promise.all([
+    const [user, resume, submissions, mockInterviews, materialsCount, activityLogs, hackathons, placementDrives, notifications, dbAnnouncements] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: { department: true },
@@ -45,11 +45,15 @@ export async function getStudentDashboard(req: Request, res: Response) {
         orderBy: { createdAt: 'desc' },
         take: 10,
       }),
+      prisma.announcement.findMany({
+        where: { status: 'PUBLISHED' },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
     ]);
 
     if (!user) return res.status(404).json({ error: 'Student not found' });
 
-    // Actual user data evaluation
     const resumeScore = resume ? resume.atsScore : null;
 
     const assessmentScores = submissions.map(s => s.obtainedMarks);
@@ -88,14 +92,30 @@ export async function getStudentDashboard(req: Request, res: Response) {
       parsedSkills
     );
 
-    // Build Unified Campus Announcements Array
+    // Build Unified Dynamic Campus Announcements Array from database models exclusively
     const announcements = [
+      ...dbAnnouncements.map(a => ({
+        id: a.id,
+        title: a.title,
+        message: a.summary || a.description.slice(0, 160),
+        description: a.description,
+        category: a.category,
+        priority: a.priorityLevel,
+        coverImageUrl: a.coverImageUrl,
+        videoUrl: a.videoUrl,
+        documentUrl: a.documentUrl,
+        documentName: a.documentName,
+        link: `/student/announcements/${a.id}`,
+        createdAt: a.createdAt.toISOString(),
+      })),
       ...placementDrives.map(p => ({
         id: `ann_placement_${p.id}`,
         title: `📢 Placement Drive: ${p.companyName} (${p.jobTitle})`,
         message: `Package: ${p.salaryStipend || 'Competitive'} | Location: ${p.jobLocation}. Apply before ${p.registrationDeadline}.`,
+        description: p.jobDescription,
         category: 'PLACEMENT_DRIVE',
         priority: 'HIGH',
+        coverImageUrl: p.companyLogoUrl,
         link: '/student/placements',
         createdAt: p.createdAt.toISOString(),
       })),
@@ -103,45 +123,14 @@ export async function getStudentDashboard(req: Request, res: Response) {
         id: `ann_hackathon_${h.id}`,
         title: `🏆 Hackathon Alert: ${h.title}`,
         message: `Organized by ${h.organizingCompany}. Prize Pool: ${h.prizeInfo || 'Exciting Rewards'}. Deadline: ${h.registrationDeadline}.`,
+        description: h.description,
         category: 'HACKATHON',
         priority: 'MEDIUM',
+        coverImageUrl: h.bannerUrl,
         link: '/student/hackathons',
         createdAt: h.createdAt.toISOString(),
       })),
-      ...notifications.map(n => ({
-        id: `ann_notif_${n.id}`,
-        title: n.title,
-        message: n.message,
-        category: n.type,
-        priority: 'NORMAL',
-        link: n.type === 'ASSESSMENT' ? '/student/assessments' : '/student/dashboard',
-        createdAt: n.createdAt.toISOString(),
-      })),
     ];
-
-    // Guarantee default high-priority announcements if list is empty
-    if (announcements.length === 0) {
-      announcements.push(
-        {
-          id: 'default_ann_1',
-          title: '📢 Amazon & Microsoft Campus Recruitment Drive 2026 Announced!',
-          message: 'The Campus Placement Cell has published upcoming hiring drives for SDE-1 and Cloud Intern roles. Review eligibility and update your ATS Resume.',
-          category: 'PLACEMENT_DRIVE',
-          priority: 'HIGH',
-          link: '/student/placements',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'default_ann_2',
-          title: '🎯 Mandatory AI Technical Mock Interview Schedule',
-          message: 'All final year Students must complete at least 1 STAR Method Mock Interview Round before placement drive shortlisting.',
-          category: 'ANNOUNCEMENT',
-          priority: 'HIGH',
-          link: '/student/mock-interview',
-          createdAt: new Date().toISOString(),
-        }
-      );
-    }
 
     return res.json({
       studentInfo: {
