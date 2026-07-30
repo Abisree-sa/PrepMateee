@@ -1,0 +1,14 @@
+{
+  "name": "placement-ready",
+  "version": "1.0.0",
+  "description": "AI-Powered Placement Preparation & Assessment Platform",
+  "scripts": {
+    "setup": "npm --prefix backend install && npm --prefix frontend install && npm --prefix backend run db:push && npm --prefix backend run db:seed",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,261 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Department {
+  id          String                 @id @default(uuid())
+  code        String                 @unique
+  name        String
+  users       User[]
+  assessments AssessmentDepartment[]
+  createdAt   DateTime               @default(now())
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  passwordHash          String
+  fullName              String
+  registerNumber        String?                @unique
+  role                  String                 @default("STUDENT") // STUDENT, COORDINATOR, ADMIN
+  admissionYear         Int?
+  departmentId          String?
+  department            Department?            @relation(fields: [departmentId], references: [id])
+  avatarUrl             String?
+  githubUsername        String?
+  leetcodeUsername      String?
+  codingProfileData     String?                // JSON string of fetched profile stats & skills
+  isActive              Boolean                @default(true)
+  isOnline              Boolean                @default(false)
+  lastLoginAt           DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  resume                Resume?
+  assessmentSubmissions AssessmentSubmission[]
+  proctoringLogs        ProctoringLog[]
+  mockInterviews        MockInterview[]
+  notifications         Notification[]
+  activityLogs          ActivityLog[]
+  uploadedMaterials     PlacementMaterial[]
+}
+
+model PlacementMaterial {
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  category     String   // Coding Notes, Aptitude Notes, Interview Guides, Company Papers, General
+  topic        String
+  fileType     String   // pdf, docx, txt, ppt
+  fileUrl      String
+  fileName     String
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model PlacementOpportunity {
+  id                   String   @id @default(uuid())
+  companyName          String
+  companyLogoUrl       String?
+  jobTitle             String
+  roleType             String   @default("Full-Time") // Full-Time, Internship, Both
+  jobDescription       String
+  requiredSkills       String   // JSON string array
+  eligibilityCriteria  String
+  eligibleDepartments  String   // JSON string array
+  minCgpa              Float    @default(0.0)
+  batchYear            Int      @default(2026)
+  applicationLink      String
+  registrationDeadline String
+  interviewDate        String?
+  selectionProcess     String?
+  salaryStipend        String?
+  jobLocation          String   @default("Pan India / Remote")
+  additionalNotes      String?
+  documentUrl          String?
+  documentName         String?
+  createdById          String
+  createdAt            DateTime @default(now())
+}
+
+model Resume {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileUrl       String
+  fileName      String
+  parsedData    String   // JSON string
+  atsScore      Int      @default(0)
+  qualityReport String   // JSON string
+  skillGaps     String   // JSON string
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Hackathon {
+  id                   String   @id @default(uuid())
+  title                String
+  description          String
+  organizingCompany    String
+  registrationLink     String
+  registrationDeadline String
+  eventDate            String
+  eligibility          String   @default("All B.E / B.Tech Students")
+  prizeInfo            String?
+  bannerUrl            String?
+  targetDepartments    String?  // JSON string array
+  createdById          String
+  createdAt            DateTime @default(now())
+}
+
+model Assessment {
+  id              String                 @id @default(uuid())
+  title           String
+  description     String?
+  totalMarks      Int                    @default(100)
+  durationMinutes Int                    @default(60)
+  startTime       DateTime?
+  endTime         DateTime?
+  status          String                 @default("DRAFT")
+  randomize       Boolean                @default(false)
+  negativeMarking Float                  @default(0.0)
+  createdById     String
+  departments     AssessmentDepartment[]
+  questions       Question[]
+  submissions     AssessmentSubmission[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model AssessmentDepartment {
+  assessmentId String
+  departmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([assessmentId, departmentId])
+}
+
+model Question {
+  id               String     @id @default(uuid())
+  assessmentId     String
+  assessment       Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  type             String     // MCQ, MULTI_SELECT, FILL_IN_BLANK, TRUE_FALSE, SHORT_ANSWER, DESCRIPTIVE, CODING, APTITUDE
+  title            String?
+  difficulty       String?    // Easy, Medium, Hard
+  topic            String?    // Arrays, Graphs, Trees, Dynamic Programming, Strings, etc.
+  questionText     String
+  constraints      String?
+  inputFormat      String?
+  outputFormat     String?
+  sampleInput      String?
+  sampleOutput     String?
+  starterTemplates String?    // JSON map for Java, Python, C++, C, JavaScript
+  testCases        String?    // JSON string array of { input, output, isHidden }
+  timeLimitMs      Int        @default(2000)
+  memoryLimitMb    Int        @default(256)
+  codeTemplate     String?
+  options          String?    // JSON string array
+  correctAnswer    String?    // JSON string
+  explanation      String?
+  marks            Int        @default(5)
+  orderIndex       Int        @default(0)
+}
+
+model AssessmentSubmission {
+  id                   String          @id @default(uuid())
+  assessmentId         String
+  assessment           Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentId            String
+  student              User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers              String          // JSON string
+  obtainedMarks        Float           @default(0.0)
+  isEvaluated          Boolean         @default(false)
+  malpracticeScore     Int             @default(0)
+  cameraStatus         Boolean         @default(true)
+  micStatus            Boolean         @default(true)
+  fullscreenStatus     Boolean         @default(true)
+  networkStatus        String          @default("ONLINE")
+  currentQuestionIndex Int             @default(0)
+  progressPercentage   Int             @default(0)
+  startedAt            DateTime        @default(now())
+  submittedAt          DateTime?
+  proctoringLogs       ProctoringLog[]
+}
+
+model ProctoringLog {
+  id              String               @id @default(uuid())
+  submissionId    String
+  submission      AssessmentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event           String
+  description     String
+  severity        String               // LOW, MEDIUM, HIGH, CRITICAL
+  confidenceScore Int                  @default(90)
+  aiExplanation   String?
+  snapshotUrl     String?
+  timestamp       DateTime             @default(now())
+}
+
+model MockInterview {
+  id                String               @id @default(uuid())
+  studentId         String
+  student           User                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  targetRole        String
+  targetCompany     String?
+  status            String               // IN_PROGRESS, COMPLETED
+  videoRecordingUrl String?
+  audioRecordingUrl String?
+  durationSeconds   Int                  @default(0)
+  transcript        String               // JSON string
+  evaluation        InterviewEvaluation?
+  createdAt         DateTime             @default(now())
+}
+
+model InterviewEvaluation {
+  id                    String        @id @default(uuid())
+  interviewId           String        @unique
+  interview             MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  overallScore          Int
+  communicationScore    Int
+  technicalScore        Int
+  confidenceScore       Int
+  hrScore               Int           @default(80)
+  facialExpressionScore Int           @default(82)
+  eyeContactScore       Int           @default(85)
+  bodyLanguageScore     Int           @default(84)
+  voiceClarityScore     Int           @default(88)
+  speakingPaceScore     Int           @default(86)
+  smileEngagementScore  Int           @default(80)
+  problemSolvingScore   Int
+  feedbackJson          String        // JSON string
+  learningRoadmap       String        // JSON string
+  createdAt             DateTime      @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // ASSESSMENT, RESUME, INTERVIEW, ANNOUNCEMENT, MATERIAL, HACKATHON, PLACEMENT_OPPORTUNITY
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  timestamp DateTime @default(now())
+}
